@@ -17,6 +17,7 @@ type Record struct {
 	createdAt time.Time
 	viewCount int64
 	title     string
+	content   string
 }
 
 func (db *Database) Init() error {
@@ -38,8 +39,8 @@ func (db *Database) Deinit() error {
 func (db *Database) Get(file string) (Record, error) {
 	var record Record
 
-	sql := "select created_at, view_count, title from \"Posts\" where file = $1"
-	err := db.conn.QueryRow(context.Background(), sql, file).Scan(&record.createdAt, &record.viewCount, &record.title)
+	sql := "select created_at, view_count, title, content from \"Posts\" where file = $1"
+	err := db.conn.QueryRow(context.Background(), sql, file).Scan(&record.createdAt, &record.viewCount, &record.title, &record.content)
 	if err == nil {
 		record.viewCount++
 		db.Set(file, record)
@@ -49,8 +50,8 @@ func (db *Database) Get(file string) (Record, error) {
 }
 
 func (db *Database) Set(file string, record Record) error {
-	sql := "update \"Posts\" set created_at = $1, view_count = $2, title = $3 where file = $3"
-	_, err := db.conn.Exec(context.Background(), sql, record.createdAt, record.viewCount, record.title, file)
+	sql := "update \"Posts\" set created_at = $1, view_count = $2, title = $3, content = $4, where file = $5"
+	_, err := db.conn.Exec(context.Background(), sql, record.createdAt, record.viewCount, record.title, record.content, file)
 
 	return err
 }

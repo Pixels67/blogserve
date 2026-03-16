@@ -2,21 +2,18 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"strings"
 )
 
 type Post struct {
 	Title   string `json:"title"`
+	Slug    string `json:"slug"`
 	Date    string `json:"date"`
 	Content string `json:"content"`
 }
 
 func RecordToPost(file string, record Record) (Post, error) {
-	data, err := os.ReadFile("posts/" + file + ".md")
-	if err != nil {
-		panic(err)
-	}
-
 	date := fmt.Sprintf("%d-%02d-%02d", record.createdAt.Local().Year(), record.createdAt.Local().Month(), record.createdAt.Local().Day())
-	return Post{Title: record.title, Date: date, Content: string(data)}, nil
+	slug := strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(record.title), " ", "-"), "#", "")
+	return Post{Title: record.title, Slug: slug, Date: date, Content: record.content}, nil
 }

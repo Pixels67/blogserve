@@ -1,6 +1,6 @@
 module github.com/Pixels67/blogserve
 
-go 1.26.1
+go 1.26.0
 
 require github.com/jackc/pgx/v5 v5.8.0
 
