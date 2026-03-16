@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Database struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 type Record struct {
@@ -22,25 +22,25 @@ type Record struct {
 
 func (db *Database) Init() error {
 	passwd := os.Getenv("BLOGSERVE_PASSWD")
-	connUri := fmt.Sprintf("postgresql://postgres:%s@db.lghguqmfyfcylpzdjdbo.supabase.co:5432/postgres", passwd)
-	result, err := pgx.Connect(context.Background(), connUri)
+	connUri := fmt.Sprintf("postgresql://postgres.lghguqmfyfcylpzdjdbo:%s@aws-1-eu-west-1.pooler.supabase.com:5432/postgres", passwd)
+	pool, err := pgxpool.New(context.Background(), connUri)
 	if err != nil {
 		return err
 	}
 
-	db.conn = result
+	db.pool = pool
 	return nil
 }
 
-func (db *Database) Deinit() error {
-	return db.conn.Close(context.Background())
+func (db *Database) Deinit() {
+	db.pool.Close()
 }
 
 func (db *Database) Get(file string) (Record, error) {
 	var record Record
 
 	sql := "select created_at, view_count, title, content from \"Posts\" where file = $1"
-	err := db.conn.QueryRow(context.Background(), sql, file).Scan(&record.createdAt, &record.viewCount, &record.title, &record.content)
+	err := db.pool.QueryRow(context.Background(), sql, file).Scan(&record.createdAt, &record.viewCount, &record.title, &record.content)
 	if err == nil {
 		record.viewCount++
 		db.Set(file, record)
@@ -50,8 +50,8 @@ func (db *Database) Get(file string) (Record, error) {
 }
 
 func (db *Database) Set(file string, record Record) error {
-	sql := "update \"Posts\" set created_at = $1, view_count = $2, title = $3, content = $4, where file = $5"
-	_, err := db.conn.Exec(context.Background(), sql, record.createdAt, record.viewCount, record.title, record.content, file)
+	sql := "update \"Posts\" set created_at = $1, view_count = $2, title = $3, content = $4 where file = $5"
+	_, err := db.pool.Exec(context.Background(), sql, record.createdAt, record.viewCount, record.title, record.content, file)
 
 	return err
 }
