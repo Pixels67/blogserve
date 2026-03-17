@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -33,14 +32,13 @@ func main() {
 	}
 
 	router.GET("/posts/:file", retrieve)
+	router.GET("/posts", retrieveAll)
 	router.Run("0.0.0.0:" + port)
 }
 
 func retrieve(c *gin.Context) {
 	file := c.Param("file")
 	record, err := db.Get(file)
-
-	fmt.Println(record)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "post not found"})
@@ -55,4 +53,25 @@ func retrieve(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, post)
+}
+
+func retrieveAll(c *gin.Context) {
+	records, err := db.GetAll()
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "post not found"})
+		return
+	}
+
+	posts := []Post{}
+	for file, record := range records {
+		post, err := RecordToPost(file, record)
+		if err != nil {
+			continue
+		}
+
+		posts = append(posts, post)
+	}
+
+	c.IndentedJSON(http.StatusOK, posts)
 }
